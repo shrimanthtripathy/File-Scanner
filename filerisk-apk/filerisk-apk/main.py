@@ -5,7 +5,8 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.factory import Factory
-from kivy.graphics import Color, Line
+from kivy.core.text import Label as CoreLabel
+from kivy.graphics import Color, Line, Rectangle
 from kivy.lang import Builder
 from kivy.metrics import dp
 from kivy.properties import DictProperty, StringProperty, BooleanProperty, NumericProperty, ListProperty
@@ -41,16 +42,49 @@ class Badge(Label):
 class Pill(Label):
     bgc = ListProperty([0, 0, 0, 1])
 class Row(ButtonBehavior, BoxLayout): pass
+def center_text(cx, cy, text, col, size):
+    if not text: return
+    lb = CoreLabel(text=text, font_size=size, bold=True)
+    lb.refresh()
+    tex = lb.texture
+    Color(*col)
+    Rectangle(texture=tex, pos=(cx - tex.width / 2, cy - tex.height / 2), size=tex.size)
+
+
 class Ring(Widget):
     value = NumericProperty(0)
     col = ListProperty([0, 0.5, 0.5, 1])
-class Bar(Widget):
-    value = NumericProperty(0)
-class Donut(Widget):
-    segs = ListProperty([])
+    tcol = ListProperty([0, 0, 0, 1])
+    track = ListProperty([0.8, 0.8, 0.8, 1])
+    text = StringProperty("")
+    fs = NumericProperty(26)
     def __init__(self, **kw):
         super().__init__(**kw)
-        self.bind(pos=self.draw, size=self.draw, segs=self.draw)
+        for p in ("pos", "size", "value", "col", "tcol", "track", "text", "fs"):
+            self.bind(**{p: self.draw})
+    def draw(self, *a):
+        self.canvas.clear()
+        r = min(self.size) / 2 - dp(8)
+        with self.canvas:
+            Color(*self.track)
+            Line(circle=(self.center_x, self.center_y, r), width=dp(8))
+            Color(*self.col)
+            Line(circle=(self.center_x, self.center_y, r, 0, max(1, 360 * self.value)), width=dp(8), cap="round")
+            center_text(self.center_x, self.center_y, self.text, self.tcol, dp(self.fs))
+
+
+class Bar(Widget):
+    value = NumericProperty(0)
+
+
+class Donut(Widget):
+    segs = ListProperty([])
+    center_text = StringProperty("")
+    tcol = ListProperty([0, 0, 0, 1])
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        for p in ("pos", "size", "segs", "center_text", "tcol"):
+            self.bind(**{p: self.draw})
     def draw(self, *a):
         self.canvas.clear()
         r, a0 = min(self.size) / 2 - dp(10), 0
@@ -60,6 +94,7 @@ class Donut(Widget):
                 Color(*col)
                 Line(circle=(self.center_x, self.center_y, r, a0, a0 + 360 * frac), width=dp(10))
                 a0 += 360 * frac
+            center_text(self.center_x, self.center_y, self.center_text, self.tcol, dp(24))
 
 
 KV = """
@@ -173,18 +208,10 @@ KV = """
             size: self.size
             radius: [dp(15)]
 <Ring>:
-    canvas:
-        Color:
-            rgba: app.t['track']
-        Line:
-            circle: (self.center_x, self.center_y, min(self.size) / 2 - dp(8))
-            width: dp(8)
-        Color:
-            rgba: self.col
-        Line:
-            circle: (self.center_x, self.center_y, min(self.size) / 2 - dp(8), 0, max(1, 360 * self.value))
-            width: dp(8)
-            cap: 'round'
+    tcol: app.t['ink']
+    track: app.t['track']
+<Donut>:
+    tcol: app.t['ink']
 <Bar>:
     size_hint_y: None
     height: dp(10)
@@ -278,22 +305,13 @@ KV = """
             text: 'Scanning...'
             bold: True
             font_size: '24sp'
-        FloatLayout:
-            size_hint_y: None
-            height: dp(230)
-            Ring:
-                id: ring
-                size_hint: None, None
-                size: dp(210), dp(210)
-                pos_hint: {'center_x': .5, 'center_y': .5}
-                col: app.t['acc']
-            Label:
-                id: pct
-                text: '0%'
-                font_size: '36sp'
-                bold: True
-                color: app.t['ink']
-                pos_hint: {'center_x': .5, 'center_y': .5}
+        Ring:
+            id: ring
+            size_hint: None, None
+            size: dp(210), dp(210)
+            pos_hint: {'center_x': .5}
+            col: app.t['acc']
+            fs: 36
         Txt:
             id: count
             halign: 'center'
@@ -384,20 +402,16 @@ KV = """
                 Card:
                     orientation: 'horizontal'
                     spacing: dp(16)
-                    FloatLayout:
+                    Ring:
+                        id: ring
                         size_hint: None, None
                         size: dp(110), dp(110)
-                        Ring:
-                            id: ring
-                        Label:
-                            id: sc
-                            font_size: '28sp'
-                            bold: True
-                            color: app.t['ink']
+                        pos_hint: {'center_y': .5}
                     BoxLayout:
                         orientation: 'vertical'
                         size_hint_y: None
                         height: dp(110)
+                        pos_hint: {'center_y': .5}
                         Widget:
                         Txt:
                             id: lvl
@@ -455,16 +469,11 @@ KV = """
                 Card:
                     orientation: 'horizontal'
                     spacing: dp(16)
-                    FloatLayout:
+                    Donut:
+                        id: donut
                         size_hint: None, None
                         size: dp(130), dp(130)
-                        Donut:
-                            id: donut
-                        Label:
-                            id: dtotal
-                            font_size: '22sp'
-                            bold: True
-                            color: app.t['ink']
+                        pos_hint: {'center_y': .5}
                     BoxLayout:
                         id: legend
                         orientation: 'vertical'
@@ -667,7 +676,7 @@ class FileRiskApp(App):
             return
         self.cancelled = False
         ids = self.scr("progress")
-        ids.ring.value = 0; ids.pct.text = "0%"; ids.count.text = "Preparing..."; ids.cur.text = ""
+        ids.ring.value = 0; ids.ring.text = "0%"; ids.count.text = "Preparing..."; ids.cur.text = ""
         ids.nclean.text = ""; ids.nflag.text = ""
         self.go("progress")
         threading.Thread(target=self._scan, args=(path, scan_all), daemon=True).start()
@@ -689,7 +698,7 @@ class FileRiskApp(App):
     def _prog(self, i, total, name, clean, flag, *_):
         ids = self.scr("progress")
         ids.ring.value = i / max(total, 1)
-        ids.pct.text = f"{int(100 * i / max(total, 1))}%"
+        ids.ring.text = f"{int(100 * i / max(total, 1))}%"
         ids.count.text = f"{i} of {total} files"
         ids.cur.text = name
         ids.nclean.text = f"[color=1F7A4D]{clean}[/color] clean"
@@ -732,7 +741,7 @@ class FileRiskApp(App):
             ids.grid.add_widget(row)
         d = self.scr("dashboard")
         d.dsub.text = f"{st['total_files']} files - {st['total_bytes']/1e6:.1f} MB"
-        d.dtotal.text = str(st["total_files"])
+        d.donut.center_text = str(st["total_files"])
         total = max(st["total_files"], 1)
         d.donut.segs = [(lv[l]["count"] / total, lvl_rgba(l)) for l in ("Clean", "Low", "Medium", "High", "Critical") if l in lv]
         d.legend.clear_widgets()
@@ -752,7 +761,7 @@ class FileRiskApp(App):
         ids = self.scr("detail")
         ids.fname.text, ids.fpath.text = r["name"], r["path"]
         ids.ring.value, ids.ring.col = r["score"] / 100, lvl_rgba(r["level"])
-        ids.sc.text = str(r["score"])
+        ids.ring.text = str(r["score"])
         ids.lvl.text = f"{r['level']} risk" if r["level"] != "Clean" else "No threats found"
         ids.lvlnote.text = f"Score {r['score']} of 100"
         ids.reasons.clear_widgets()
