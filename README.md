@@ -105,6 +105,3 @@ Push to this repository: the **Build APK** workflow compiles the app with Buildo
 
 Issues and pull requests are welcome. If you find a false positive or a file type that should be checked, open an issue with the finding code shown in the report (for example, `TYPE_MISMATCH` or `PDF_JS`).
 
-## 📄 License
-
-Add a `LICENSE` file to choose how others may use this project (MIT is a common, permissive choice).
