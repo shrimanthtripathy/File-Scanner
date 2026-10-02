@@ -1,12 +1,9 @@
-<img width="400" height="800" alt="ss1 (3)" src="https://github.com/user-attachments/assets/82c5100b-5369-4403-b500-240c1a297a61" />
-<img width="400" height="800" alt="ss1 (4)" src="https://github.com/user-attachments/assets/0519eda6-0643-4980-b16e-22784ebbf814" />
-<img width="400" height="800" alt="ss1 (2)" src="https://github.com/user-attachments/assets/3b5a0069-9de6-4601-9b81-c2ee5f60abf5" />
-<img width="400" height="800" alt="ss1 (1)" src="https://github.com/user-attachments/assets/913d3402-c41e-4d16-9d89-135615159f5e" />
-
+🛡️ FileRisk Scanner
 **A free, offline file risk scanner for Android and PC.**
 Pick a folder, and FileRisk checks each file's real contents and gives it a risk score from 0 to 100 with plain-language reasons.
 
-> **Status:** early release. FileRisk is a static analysis tool: it reports *risk indicators*, not a guarantee of safety. It is not a replacement for a full antivirus.
+<img width="400" height="800" alt="ss1 (3)" src="https://github.com/user-attachments/assets/82c5100b-5369-4403-b500-240c1a297a61" />
+<img width="400" height="800" alt="ss1 (4)" src="https://github.com/user-attachments/assets/0519eda6-0643-4980-b16e-22784ebbf814" />
 
 ---
 
@@ -44,6 +41,9 @@ Each finding adds points, and the total is capped at 100.
 | 100 / known-bad hash | ⛔ Critical |
 
 Examples: a file whose type doesn't match its extension adds +30, a disguised executable adds +40, and embedded PDF JavaScript adds +25.
+
+<img width="400" height="800" alt="ss1 (2)" src="https://github.com/user-attachments/assets/3b5a0069-9de6-4601-9b81-c2ee5f60abf5" />
+<img width="400" height="800" alt="ss1 (1)" src="https://github.com/user-attachments/assets/913d3402-c41e-4d16-9d89-135615159f5e" />
 
 ## 📱 Install on Android
 
